@@ -15,18 +15,30 @@ public class DockerApplication {
         // Top level command
         String cmd = args[0];
 
+        //
         if (cmd.equals("run")) {
             try {
-                // Create ProcessBuilder
-                ProcessBuilder processBuilder = new ProcessBuilder();
+                // Construct the command to be executed within the new namespace
+                StringBuilder command = new StringBuilder();
+                // Rename the hostname of sub-process to 'container'
+                // The goal here is launch the container with it’s own hostname,
+                // whilst not affecting the hostname of the host operating system
+                command.append("hostname container && ");
                 for (int i = 1; i < args.length; i++) {
-                    processBuilder.command().add(args[i]);
+                    command.append(args[i]).append(" ");
                 }
+
+                // Create ProcessBuilder
+                // Creates a new UTS namespace
+                ProcessBuilder processBuilder = new ProcessBuilder("unshare", "--uts", "bash", "-c");
+//                log.debug(command.toString());
+                processBuilder.command().add(command.toString());
 
                 // Start the process
                 Process process = processBuilder.start();
 
                 // Read output
+                // Debugging purpose, later will remove this
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
