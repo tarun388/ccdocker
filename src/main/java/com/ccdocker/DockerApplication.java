@@ -24,26 +24,22 @@ public class DockerApplication {
                 // The goal here is launch the container with it’s own hostname,
                 // whilst not affecting the hostname of the host operating system
                 command.append("hostname container && ");
+                // Isolate the processes running inside the container from the host filesystem
+                // chroot: change the root file system
+                command.append("chroot /mnt/hgfs/ccdocker/alpine-rootfs/ ");
+                // Run arbitrary user program command
                 for (int i = 1; i < args.length; i++) {
                     command.append(args[i]).append(" ");
                 }
 
                 // Create ProcessBuilder
                 // Creates a new UTS namespace
-                ProcessBuilder processBuilder = new ProcessBuilder("unshare", "--uts", "bash", "-c");
-//                log.debug(command.toString());
+                ProcessBuilder processBuilder = new ProcessBuilder("unshare", "--uts", "bash", "-c").inheritIO();
+                // log.debug(command.toString());
                 processBuilder.command().add(command.toString());
 
                 // Start the process
                 Process process = processBuilder.start();
-
-                // Read output
-                // Debugging purpose, later will remove this
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
 
                 // Wait for the process to finish
                 int exitCode = process.waitFor();
